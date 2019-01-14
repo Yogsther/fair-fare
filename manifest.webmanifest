@@ -1,0 +1,9 @@
+{
+    "name": "FairFare",
+    "display": "standalone",
+    "icons": [
+    {
+       "src": "icon.png",
+       "sizes": "512x512"}
+    ]
+ }
