@@ -30,10 +30,15 @@ var showing_settings = false;
 var users = [];
 var active_users = 0;
 var gps_runing = false;
+var total_money = 0;
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
 var settings = {
     milage_cost: 1.3,
     total_distance: 0, // Meters
-    last_pos: undefined /* Coords */
+    last_pos: undefined /* Coords */ ,
+    display_share: false,
+    total_rides: 0
 }
 
 load();
@@ -52,20 +57,63 @@ function set_last_pos() {
     }, e => error(e));
 }
 
+function close_receipt(){
+    canvas.style.visibility = "hidden";
+}
+
+generate_receipt();
+function generate_receipt() {
+    canvas.style.visibility = "visible";
+    canvas.width = document.body.offsetWidth;
+    canvas.height = document.body.offsetHeight;
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "black"; // Text color
+    ctx.font = "30px Monaco";
+    ctx.textAlign = "center";
+    ctx.fillText("Fair Fare", canvas.width / 2, 50);
+    ctx.font = "17px Monaco";
+    ctx.fillText("Ride receipt", canvas.width / 2, 70);
+
+
+    var y_height = 170;
+    ctx.textAlign = "left";
+
+    ctx.fillText("Ride Nr. " + settings.total_rides, 20, 120);
+
+    var date_arr = new Date().toString().split(" ");
+    ctx.fillText(date_arr[4].substr(0, date_arr[4].lastIndexOf(":")) + " - " + date_arr[2] + " " + date_arr[1] + " " + date_arr[3], 20, 145)
+
+    for(user of users){
+        y_height+=30;
+        var output_str = user.username;
+        while(ctx.measureText(output_str).width < 110) output_str += ".";
+        output_str += Math.round((user.meters/1000)*10)/10 + "km";
+        while(ctx.measureText(output_str).width < 240) output_str += ".";
+        output_str += Math.ceil(user.kr) + ":-"
+        ctx.fillText(output_str, 20, y_height);
+    }
+
+    ctx.fillText("Total: " + Math.round((settings.total_distance/1000)*10)/10 + "km, " + Math.ceil(total_money) + ":-", 20, y_height+50);
+    ctx.fillText("Fair Fare, fair.livfor.it", 20, y_height+80);
+}
+
 function run_gps() {
     if (gps_runing) return;
     set_gps_status(1);
 
     navigator.geolocation.watchPosition(position => {
         gps_runing = true;
-        if(settings.last_pos === undefined) return;
+        if (settings.last_pos === undefined) return;
         var distance = calculateDistance(settings.last_pos.latitude, settings.last_pos.longitude, position.coords.latitude, position.coords.longitude);
 
         if (distance > .1) {
             calculate_share();
             settings.last_pos = position.coords;
 
-            if(active_users > 0){
+            if (active_users > 0) {
                 settings.total_distance += distance * 1000; // Meters
                 for (user of users) {
                     if (user.active) {
@@ -77,6 +125,7 @@ function run_gps() {
             }
             save();
         }
+        calculate_share();
         display_users();
     }, e => {
         error(e);
@@ -101,10 +150,17 @@ function set_gps_status(code) {
 
 function calculate_share() {
     active_users = 0;
+    total_money = 0;
     for (user of users) {
         if (user.active) {
             active_users++;
         }
+        total_money += user.kr;
+    }
+
+    for (user of users) {
+        user.pay_share = ((Math.round((user.kr / total_money) * 10) / 10) * 100) + "%";
+        if (user.pay_share.indexOf("NaN") !== -1) user.pay_share = "0%";
     }
 }
 
@@ -125,13 +181,21 @@ function reset_all() {
     if (confirm("Are you sure you want to end the ride?")) {
         for (user of users) {
             user.reset();
-            settings.total_distance = 0;
-            settings.last_pos = undefined;
-            set_last_pos();
         }
+        settings.total_rides++;
+        settings.total_distance = 0;
+        settings.last_pos = undefined;
+        set_last_pos();
         save();
     }
 
+}
+
+function switch_display_mode(el) {
+    settings.display_share = !settings.display_share;
+    if (settings.display_share) el.innerText = "DISPLAY SEK";
+    else el.innerText = "DISPLAY SHARE";
+    save();
 }
 
 function create_settings_DOM() {
@@ -153,7 +217,23 @@ function create_settings_DOM() {
     reset_button.setAttribute("onclick", "reset_all()")
     reset_button.innerText = "END RIDE";
 
+    var switch_btn = document.createElement("button");
+    switch_btn.classList.add("btn");
+    switch_btn.classList.add("switch-button");
+    switch_btn.setAttribute("onclick", "switch_display_mode(this)")
+    switch_btn.innerText = "DISPLAY SHARE";
+    if (settings.display_share) switch_btn.innerText = "DISPLAY SEK";
+
+    var receipt_button = document.createElement("button");
+    receipt_button.classList.add("btn");
+    receipt_button.classList.add("switch-button");
+    receipt_button.setAttribute("onclick", "generate_receipt()")
+    receipt_button.innerText = "GET RECEIPT";
+
+
     settings_DOM.appendChild(milage_input);
+    settings_DOM.appendChild(switch_btn);
+    settings_DOM.appendChild(receipt_button);
     settings_DOM.appendChild(reset_button);
     settings_DOM.innerHTML += "Delete users";
 
@@ -221,6 +301,7 @@ function delete_user(user_id) {
 }
 
 function save() {
+    calculate_share();
     if (showing_settings) {
         settings.milage_cost = Number(document.getElementById("milage_input").value);
     }
@@ -249,7 +330,7 @@ function create_DOM(user) {
     var user_display = document.createElement("div");
     var name_and_cost = document.createElement("div");
     var name = document.createElement("span");
-    var cost = document.createElement("cost");
+    var cost = document.createElement("span");
     var button = document.createElement("button");
 
     user_display.classList.add("user-display");
@@ -259,7 +340,9 @@ function create_DOM(user) {
     button.classList.add("btn");
 
     name.innerText = user.username;
-    cost.innerText = user.get_km() + "km, " + Math.round(user.kr) + ":-";
+    if (settings.display_share) cost.innerHTML += user.pay_share;
+    else cost.innerHTML += Math.round(user.kr) + ":-";
+    cost.innerHTML += "<span style='color:grey;'>, " + user.get_km() + "km</span>";
 
     button.innerText = user.get_status().toUpperCase();
     if (user.active) button.innerText += " " + Math.round(100 / active_users) + "%";
@@ -280,8 +363,10 @@ function create_DOM(user) {
 
 
 function prioritize_active(a, b) {
-    if (a.active)
-        return -1;
+    if (a.active !== b.active && a.active)
+        return -1; // Prioritize active users
+    if (a.active === b.active)
+        return b.kr - a.kr; // If their activate status is the same, prioritize KR amount
     return 0;
 }
 

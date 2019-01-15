@@ -1,3 +1,8 @@
+@font-face {
+    font-family: 'Monaco';
+    src: url('fonts/monaco.ttf') format('truetype'); /* Chrome 4+, Firefox 3.5, Opera 10+, Safari 3—5 */
+  } 
+
 #logo{
     height: 60px;
     margin-left: 20px;
@@ -16,6 +21,7 @@
 body{
     margin: 0;
     background: rgb(20, 20, 20);
+    min-height: 100vh;
 }
 
 *{
@@ -84,6 +90,7 @@ body{
 
 .name-and-cost{
     display: inline-block;
+    position: absolute;
 }
 
 .active, .paused{
@@ -143,6 +150,16 @@ body{
     margin-bottom: 10px;
 }
 
+.switch-button{
+    width: 90%;
+    margin: 0 auto;
+    display: block;
+    position: relative;
+    border-color: rgb(201, 201, 201);
+    color: rgb(201, 201, 201);
+    margin-bottom: 10px;
+}
+
 .delete{ /* Button */
     float: right;
     position: relative;
@@ -177,7 +194,7 @@ body{
     color: white;
     font-size: 15px;
     top: -25px;
-    left: 10px;
+    left: 5px;
     position: relative;
 }
 
@@ -191,4 +208,11 @@ body{
     margin-left: 7px;
     margin-top: 4px;
     transition: all .5s;
+}
+
+#canvas{
+    visibility: hidden;
+    position: absolute;
+    left: 0px;
+    top: 0px;
 }
