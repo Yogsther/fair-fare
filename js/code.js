@@ -59,9 +59,16 @@ function set_last_pos() {
 
 function close_receipt(){
     canvas.style.visibility = "hidden";
+    generating_receipt = false;
 }
 
-generate_receipt();
+var generating_receipt = false;
+
+function get_receipt(){
+    generating_receipt = true;
+    generate_receipt();
+}
+
 function generate_receipt() {
     canvas.style.visibility = "visible";
     canvas.width = document.body.offsetWidth;
@@ -98,6 +105,8 @@ function generate_receipt() {
 
     ctx.fillText("Total: " + Math.round((settings.total_distance/1000)*10)/10 + "km, " + Math.ceil(total_money) + ":-", 20, y_height+50);
     ctx.fillText("Fair Fare, fair.livfor.it", 20, y_height+80);
+    if(generating_receipt) requestAnimationFrame(generate_receipt);
+        else close_receipt();
 }
 
 function run_gps() {
@@ -227,7 +236,7 @@ function create_settings_DOM() {
     var receipt_button = document.createElement("button");
     receipt_button.classList.add("btn");
     receipt_button.classList.add("switch-button");
-    receipt_button.setAttribute("onclick", "generate_receipt()")
+    receipt_button.setAttribute("onclick", "get_receipt()")
     receipt_button.innerText = "GET RECEIPT";
 
 
