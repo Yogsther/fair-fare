@@ -118,7 +118,7 @@ function run_gps() {
         if (settings.last_pos === undefined) return;
         var distance = calculateDistance(settings.last_pos.latitude, settings.last_pos.longitude, position.coords.latitude, position.coords.longitude);
 
-        if (distance > .1) {
+        if (distance > .05) {
             calculate_share();
             settings.last_pos = position.coords;
 
@@ -135,7 +135,7 @@ function run_gps() {
             save();
         }
         calculate_share();
-        display_users();
+        if(!showing_settings) display_users();
     }, e => {
         error(e);
     });
