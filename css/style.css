@@ -112,6 +112,11 @@ body{
     border-color: rgb(175, 175, 175);
 }
 
+#sek-title{
+    width: 90%;
+    display: block;
+    margin: 0 auto;
+}
 
 #footer{
     height: 60px;
@@ -122,7 +127,7 @@ body{
 }
 
 .settings > input{
-    width: 82%;
+    width: 90%;
     height: 30px;
     font-size: 20px;
     display: block;
@@ -132,7 +137,8 @@ body{
     margin-bottom: 10px;
     border: none;
     border-radius: 5px;
-    padding: 4%;
+    padding: 25px;
+    box-sizing: border-box;   
 }
 
 .settings{

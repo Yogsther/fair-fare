@@ -83,8 +83,8 @@ function generate_receipt() {
     ctx.font = "30px Monaco";
     ctx.textAlign = "center";
     ctx.fillText("Fair Fare", canvas.width / 2, 50);
-    ctx.font = "17px Monaco";
-    ctx.fillText("Ride receipt", canvas.width / 2, 70);
+    ctx.font = "13px Monaco";
+    ctx.fillText("Ride receipt", canvas.width / 2, 77);
 
     var x_pos = canvas.width / 2 - 140;
 
@@ -101,19 +101,34 @@ function generate_receipt() {
     for (user of users) {
         y_height += 30;
         var output_str = user.username;
-        while (ctx.measureText(output_str).width < 110) output_str += ".";
+        while (ctx.measureText(output_str).width < 130) output_str += ".";
         output_str += Math.round((user.meters / 1000) * 10) / 10 + "km";
-        while (ctx.measureText(output_str).width < 240) output_str += ".";
+        while (ctx.measureText(output_str).width < 250) output_str += ".";
         output_str += Math.ceil(user.kr) + ":-"
         ctx.fillText(output_str, canvas.width / 2, y_height);
     }
 
     ctx.textAlign = "left";
 
-    ctx.fillText("Total: " + Math.round((settings.total_distance / 1000) * 10) / 10 + "km, " + Math.ceil(total_money) + ":-", x_pos, y_height + 50);
-    ctx.fillText("Fair Fare, fair.livfor.it", x_pos, y_height + 80);
+    ctx.fillText("Total " + Math.round((settings.total_distance / 1000) * 10) / 10 + "km, " + Math.ceil(total_money) + ":-" + ", Rate " + settings.milage_cost + " SEK/KM", x_pos, y_height + 50);
+    ctx.fillText("Have a fair fare! fair.livfor.it", x_pos, y_height + 80);
     if (generating_receipt) requestAnimationFrame(generate_receipt);
     else close_receipt();
+}
+
+// For DEMO purposes
+function demo_move(km) {
+    distance = km;
+    settings.total_distance += distance * 1000; // Meters
+    for (user of users) {
+        if (user.active) {
+            user.meters += distance * 1000; // Add distance to all active accounts.
+            user.kr += (settings.milage_cost * distance) / active_users;
+        }
+    }
+    save();
+    calculate_share();
+    if (!showing_settings) display_users();
 }
 
 function run_gps() {
@@ -189,6 +204,7 @@ function display_settings(show) {
     if (!show && show !== undefined) showing_settings = false;
 
     if (showing_settings) {
+        document.getElementById("settings-container").innerHTML = "";
         var settings_DOM = create_settings_DOM(animate);
         document.getElementById("settings-container").appendChild(settings_DOM);
 
@@ -227,7 +243,7 @@ function switch_display_mode(el) {
 function create_settings_DOM(animate) {
 
     var settings_DOM = document.createElement("div");
-    settings_DOM.innerHTML = "SEK / KM (Cost / 1000m)";
+    settings_DOM.innerHTML = "<span id='sek-title'>SEK / KM (Cost / 1000m)</span>";
     settings_DOM.classList.add("settings");
 
     var milage_input = document.createElement("input");
