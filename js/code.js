@@ -27,12 +27,14 @@ class User {
 }
 
 var showing_settings = false;
+var loading_users = false;
 var users = [];
 var active_users = 0;
 var gps_runing = false;
 var total_money = 0;
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
+
 var settings = {
     milage_cost: 1.3,
     total_distance: 0, // Meters
@@ -57,14 +59,14 @@ function set_last_pos() {
     }, e => error(e));
 }
 
-function close_receipt(){
+function close_receipt() {
     canvas.style.visibility = "hidden";
     generating_receipt = false;
 }
 
 var generating_receipt = false;
 
-function get_receipt(){
+function get_receipt() {
     generating_receipt = true;
     generate_receipt();
 }
@@ -84,29 +86,34 @@ function generate_receipt() {
     ctx.font = "17px Monaco";
     ctx.fillText("Ride receipt", canvas.width / 2, 70);
 
+    var x_pos = canvas.width / 2 - 140;
+
 
     var y_height = 170;
     ctx.textAlign = "left";
 
-    ctx.fillText("Ride Nr. " + settings.total_rides, 20, 120);
+    ctx.fillText("Ride Nr. " + settings.total_rides, x_pos, 120);
 
     var date_arr = new Date().toString().split(" ");
-    ctx.fillText(date_arr[4].substr(0, date_arr[4].lastIndexOf(":")) + " - " + date_arr[2] + " " + date_arr[1] + " " + date_arr[3], 20, 145)
+    ctx.fillText(date_arr[4].substr(0, date_arr[4].lastIndexOf(":")) + " - " + date_arr[2] + " " + date_arr[1] + " " + date_arr[3], x_pos, 145)
 
-    for(user of users){
-        y_height+=30;
+    ctx.textAlign = "center";
+    for (user of users) {
+        y_height += 30;
         var output_str = user.username;
-        while(ctx.measureText(output_str).width < 110) output_str += ".";
-        output_str += Math.round((user.meters/1000)*10)/10 + "km";
-        while(ctx.measureText(output_str).width < 240) output_str += ".";
+        while (ctx.measureText(output_str).width < 110) output_str += ".";
+        output_str += Math.round((user.meters / 1000) * 10) / 10 + "km";
+        while (ctx.measureText(output_str).width < 240) output_str += ".";
         output_str += Math.ceil(user.kr) + ":-"
-        ctx.fillText(output_str, 20, y_height);
+        ctx.fillText(output_str, canvas.width / 2, y_height);
     }
 
-    ctx.fillText("Total: " + Math.round((settings.total_distance/1000)*10)/10 + "km, " + Math.ceil(total_money) + ":-", 20, y_height+50);
-    ctx.fillText("Fair Fare, fair.livfor.it", 20, y_height+80);
-    if(generating_receipt) requestAnimationFrame(generate_receipt);
-        else close_receipt();
+    ctx.textAlign = "left";
+
+    ctx.fillText("Total: " + Math.round((settings.total_distance / 1000) * 10) / 10 + "km, " + Math.ceil(total_money) + ":-", x_pos, y_height + 50);
+    ctx.fillText("Fair Fare, fair.livfor.it", x_pos, y_height + 80);
+    if (generating_receipt) requestAnimationFrame(generate_receipt);
+    else close_receipt();
 }
 
 function run_gps() {
@@ -118,24 +125,23 @@ function run_gps() {
         if (settings.last_pos === undefined) return;
         var distance = calculateDistance(settings.last_pos.latitude, settings.last_pos.longitude, position.coords.latitude, position.coords.longitude);
 
-        if (distance > .05) {
-            calculate_share();
-            settings.last_pos = position.coords;
 
-            if (active_users > 0) {
-                settings.total_distance += distance * 1000; // Meters
-                for (user of users) {
-                    if (user.active) {
-                        user.meters += distance * 1000; // Add distance to all active accounts.
-                        user.kr += (settings.milage_cost * distance) / active_users;
-                    }
-                }
-
-            }
-            save();
-        }
         calculate_share();
-        if(!showing_settings) display_users();
+        settings.last_pos = position.coords;
+
+        if (active_users > 0) {
+            settings.total_distance += distance * 1000; // Meters
+            for (user of users) {
+                if (user.active) {
+                    user.meters += distance * 1000; // Add distance to all active accounts.
+                    user.kr += (settings.milage_cost * distance) / active_users;
+                }
+            }
+        }
+        save();
+
+        calculate_share();
+        if (!showing_settings) display_users();
     }, e => {
         error(e);
     });
@@ -174,14 +180,25 @@ function calculate_share() {
 }
 
 function display_settings(show) {
+    var animate = true;
     showing_settings = !showing_settings; // Toggle settings
-    if (show) showing_settings = true;
+    if (show) {
+        showing_settings = true;
+        animate = false;
+    }
     if (!show && show !== undefined) showing_settings = false;
 
     if (showing_settings) {
-        document.getElementById("users").innerHTML = "";
-        document.getElementById("users").appendChild(create_settings_DOM());
+        var settings_DOM = create_settings_DOM(animate);
+        document.getElementById("settings-container").appendChild(settings_DOM);
+
+        setTimeout(() => {
+            settings_DOM.style.visibility = "visible";
+            if (animate) settings_DOM.style.top = "0px";
+        }, 10)
     } else {
+        document.getElementsByClassName("settings")[0].style.top = -document.getElementsByClassName("settings")[0].offsetHeight - 60 + "px";
+        setTimeout(() => document.getElementById("settings-container").innerHTML = "", 500);
         display_users();
     }
 }
@@ -207,7 +224,7 @@ function switch_display_mode(el) {
     save();
 }
 
-function create_settings_DOM() {
+function create_settings_DOM(animate) {
 
     var settings_DOM = document.createElement("div");
     settings_DOM.innerHTML = "SEK / KM (Cost / 1000m)";
@@ -271,12 +288,23 @@ function create_settings_DOM() {
         settings_DOM.appendChild(user);
     }
 
+    if (animate) settings_DOM.style.top = -get_height_of_DOM(settings_DOM) + "px";
     return settings_DOM;
 }
 
+function get_height_of_DOM(el) {
+    el.style.visibility = "hidden";
+    document.body.appendChild(el);
+    var height = el.clientHeight;
+    el.remove();
+    return height;
+}
+
 function display_users() {
+
     users.sort(prioritize_active);
     document.getElementById("users").innerHTML = "";
+
     for (user of users) {
         document.getElementById("users").appendChild(create_DOM(user));
     }
@@ -350,7 +378,7 @@ function create_DOM(user) {
 
     name.innerText = user.username;
     if (settings.display_share) cost.innerHTML += user.pay_share;
-    else cost.innerHTML += Math.round(user.kr) + ":-";
+    else cost.innerHTML += Math.ceil(user.kr) + ":-";
     cost.innerHTML += "<span style='color:grey;'>, " + user.get_km() + "km</span>";
 
     button.innerText = user.get_status().toUpperCase();

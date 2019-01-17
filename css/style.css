@@ -14,6 +14,8 @@
 
 .header{
     width: 100%;
+    position: relative;
+    z-index: 1000;
     height: 60px;
     background: rgb(17, 17, 17);
 }
@@ -136,8 +138,14 @@ body{
 .settings{
     overflow: hidden;
     color: white;
+    background: rgb(20, 20, 20);
     padding-top: 10px;
     padding-bottom: 10px;
+    top: 0px;
+    min-height: 70vh;
+    padding: 20px;
+    transition: all .5s;
+    position: relative;
 }
 
 .reset-button{
@@ -213,6 +221,14 @@ body{
 #canvas{
     visibility: hidden;
     position: absolute;
+    z-index: 10000;
     left: 0px;
     top: 0px;
+}
+
+#settings-container{
+    position: absolute;
+    top: 60px;
+    width: 100%;
+    z-index: 100;
 }
