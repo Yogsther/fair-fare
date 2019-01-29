@@ -1,3 +1,8 @@
+/* if (location.protocol != 'https:') {
+    location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
+} */
+
+
 class User {
     constructor(username) {
         // Generate ID & make sure it's not taken.
@@ -8,6 +13,7 @@ class User {
         this.meters = 0;
         this.kr = 0;
         this.active = false;
+        this.credit = 0;
     }
 
     reset() {
@@ -71,6 +77,41 @@ function get_receipt() {
     generate_receipt();
 }
 
+function credit_user(user_id) {
+    var user = users[get_user(user_id)];
+    var amount = prompt("How much would like to credit this user?", 0);
+    if (!isNaN(Number(amount))) {
+        // If it's a number
+        user.credit = Number(user.credit) + Number(amount);
+        save();
+    }
+}
+
+function get_user_pay(user){
+    var to_pay = Math.ceil(user.kr);
+    var credit = user.credit;
+    if(credit > 0){
+        // User has credits
+        if(to_pay > credit){
+            to_pay -= credit;
+            credit = 0;
+        } else if(to_pay < credit) {
+            credit -= to_pay;
+            to_pay = 0;
+        } else {
+            credit = 0;
+            to_pay = 0;
+        }
+    }
+
+    return {
+        credit_used: user.credit - credit,
+        credit_left: credit,
+        to_pay: to_pay
+    }
+}
+
+
 function generate_receipt() {
     canvas.style.visibility = "visible";
     canvas.width = document.body.offsetWidth;
@@ -97,15 +138,18 @@ function generate_receipt() {
     var date_arr = new Date().toString().split(" ");
     ctx.fillText(date_arr[4].substr(0, date_arr[4].lastIndexOf(":")) + " - " + date_arr[2] + " " + date_arr[1] + " " + date_arr[3], x_pos, 145)
 
-    ctx.textAlign = "center";
+    ctx.textAlign = "left";
     for (user of users) {
+        if (user.meters === 0) continue; // Don't display users who haven't traveled.
+        var to_pay = get_user_pay(user);
         y_height += 30;
         var output_str = user.username;
+        if(user.credit > 0) output_str += " (" + to_pay.credit_used + ":-)";
         while (ctx.measureText(output_str).width < 130) output_str += ".";
         output_str += Math.round((user.meters / 1000) * 10) / 10 + "km";
         while (ctx.measureText(output_str).width < 250) output_str += ".";
-        output_str += Math.ceil(user.kr) + ":-"
-        ctx.fillText(output_str, canvas.width / 2, y_height);
+        output_str += to_pay.to_pay + ":-"
+        ctx.fillText(output_str, x_pos - 5, y_height);
     }
 
     ctx.textAlign = "left";
@@ -222,6 +266,12 @@ function display_settings(show) {
 function reset_all() {
     if (confirm("Are you sure you want to end the ride?")) {
         for (user of users) {
+            var pay = get_user_pay(user);
+            if(pay.credit_used > 0){
+                if(confirm(user.username + " should be charged " + pay.credit_used + " credits, do you want to proceed?")){
+                    user.credit -= pay.credit_used;
+                }
+            }
             user.reset();
         }
         settings.total_rides++;
@@ -259,12 +309,12 @@ function create_settings_DOM(animate) {
     reset_button.setAttribute("onclick", "reset_all()")
     reset_button.innerText = "END RIDE";
 
-    var switch_btn = document.createElement("button");
-    switch_btn.classList.add("btn");
-    switch_btn.classList.add("switch-button");
-    switch_btn.setAttribute("onclick", "switch_display_mode(this)")
-    switch_btn.innerText = "DISPLAY SHARE";
-    if (settings.display_share) switch_btn.innerText = "DISPLAY SEK";
+    /*  var switch_btn = document.createElement("button");
+     switch_btn.classList.add("btn");
+     switch_btn.classList.add("switch-button");
+     switch_btn.setAttribute("onclick", "switch_display_mode(this)")
+     switch_btn.innerText = "DISPLAY SHARE";
+     if (settings.display_share) switch_btn.innerText = "DISPLAY SEK"; */
 
     var receipt_button = document.createElement("button");
     receipt_button.classList.add("btn");
@@ -274,7 +324,7 @@ function create_settings_DOM(animate) {
 
 
     settings_DOM.appendChild(milage_input);
-    settings_DOM.appendChild(switch_btn);
+    //settings_DOM.appendChild(switch_btn);
     settings_DOM.appendChild(receipt_button);
     settings_DOM.appendChild(reset_button);
     settings_DOM.innerHTML += "Delete users";
@@ -288,6 +338,15 @@ function create_settings_DOM(animate) {
         username.innerText = users[i].username;
         username.id = users[i].id;
 
+        var credit_button = document.createElement("button");
+        credit_button.classList.add("btn");
+        credit_button.classList.add("credit-button")
+        credit_button.innerText = "$";
+        credit_button.id = users[i].id;
+        credit_button.onclick = (e) => {
+            credit_user(e.target.id);
+        }
+
         var delete_button = document.createElement("button");
         delete_button.classList.add("btn");
         delete_button.classList.add("delete");
@@ -300,6 +359,7 @@ function create_settings_DOM(animate) {
 
         user.appendChild(username);
         user.appendChild(delete_button);
+        user.appendChild(credit_button);
 
         settings_DOM.appendChild(user);
     }
@@ -393,6 +453,7 @@ function create_DOM(user) {
     button.classList.add("btn");
 
     name.innerText = user.username;
+    if (user.credit > 0) name.innerHTML += "<span style='color:rgb(74, 214, 74);'> (" + user.credit + ":-)</span>";
     if (settings.display_share) cost.innerHTML += user.pay_share;
     else cost.innerHTML += Math.ceil(user.kr) + ":-";
     cost.innerHTML += "<span style='color:grey;'>, " + user.get_km() + "km</span>";
