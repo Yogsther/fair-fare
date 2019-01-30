@@ -377,7 +377,6 @@ function get_height_of_DOM(el) {
 }
 
 function display_users() {
-
     users.sort(prioritize_active);
     document.getElementById("users").innerHTML = "";
 
@@ -403,7 +402,8 @@ function get_user(user_id) {
 function add_user() {
     username = prompt("Enter name");
     if (username) users.push(new User(username));
-    display_users();
+    if(!showing_settings) display_users();
+        else display_settings(true);
     save();
 }
 

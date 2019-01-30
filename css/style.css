@@ -14,7 +14,7 @@
 
 .header{
     width: 100%;
-    position: relative;
+    position: fixed;
     z-index: 1000;
     height: 60px;
     background: rgb(17, 17, 17);
@@ -69,6 +69,8 @@ body{
     width: 90%;
     margin: 0 auto;
     position: relative;
+    top: 60px;
+
     overflow: auto;
 }
 
