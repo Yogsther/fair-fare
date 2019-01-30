@@ -67,10 +67,10 @@ body{
 
 .users{
     width: 90%;
-    margin: 0 auto;
-    position: relative;
+    left: 5%;
     top: 60px;
-
+    height: 89vh;
+    position: fixed;
     overflow: auto;
 }
 
@@ -244,8 +244,8 @@ body{
 
 .credit-button{
     width: 50px !important;
-    border-color: rgb(74, 214, 74);
-    color: rgb(74, 214, 74);
+    border-color: rgb(92, 224, 92);
+    color: rgb(92, 224, 92);
     float: right;
     top: 10px;
     position: relative;

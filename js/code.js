@@ -79,7 +79,7 @@ function get_receipt() {
 
 function credit_user(user_id) {
     var user = users[get_user(user_id)];
-    var amount = prompt("How much would like to credit this user?", 0);
+    var amount = prompt("How much would like to credit this user?");
     if (!isNaN(Number(amount))) {
         // If it's a number
         user.credit = Number(user.credit) + Number(amount);
@@ -87,15 +87,15 @@ function credit_user(user_id) {
     }
 }
 
-function get_user_pay(user){
+function get_user_pay(user) {
     var to_pay = Math.ceil(user.kr);
     var credit = user.credit;
-    if(credit > 0){
+    if (credit > 0) {
         // User has credits
-        if(to_pay > credit){
+        if (to_pay > credit) {
             to_pay -= credit;
             credit = 0;
-        } else if(to_pay < credit) {
+        } else if (to_pay < credit) {
             credit -= to_pay;
             to_pay = 0;
         } else {
@@ -144,10 +144,10 @@ function generate_receipt() {
         var to_pay = get_user_pay(user);
         y_height += 30;
         var output_str = user.username;
-        if(user.credit > 0) output_str += " (" + to_pay.credit_used + ":-)";
-        while (ctx.measureText(output_str).width < 130) output_str += ".";
+        if (user.credit > 0) output_str += " (" + to_pay.credit_used + ":-)";
+        while (ctx.measureText(output_str).width < 130) output_str += " ";
         output_str += Math.round((user.meters / 1000) * 10) / 10 + "km";
-        while (ctx.measureText(output_str).width < 250) output_str += ".";
+        while (ctx.measureText(output_str).width < 250) output_str += " ";
         output_str += to_pay.to_pay + ":-"
         ctx.fillText(output_str, x_pos - 5, y_height);
     }
@@ -267,8 +267,8 @@ function reset_all() {
     if (confirm("Are you sure you want to end the ride?")) {
         for (user of users) {
             var pay = get_user_pay(user);
-            if(pay.credit_used > 0){
-                if(confirm(user.username + " should be charged " + pay.credit_used + " credits, do you want to proceed?")){
+            if (pay.credit_used > 0) {
+                if (confirm(user.username + " should be charged " + pay.credit_used + " credits, do you want to proceed?")) {
                     user.credit -= pay.credit_used;
                 }
             }
@@ -402,8 +402,8 @@ function get_user(user_id) {
 function add_user() {
     username = prompt("Enter name");
     if (username) users.push(new User(username));
-    if(!showing_settings) display_users();
-        else display_settings(true);
+    if (!showing_settings) display_users();
+    else display_settings(true);
     save();
 }
 
