@@ -2,6 +2,7 @@
     location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
 } */
 
+var noSleep = new NoSleep();
 
 class User {
     constructor(username) {
@@ -386,6 +387,7 @@ function display_users() {
 }
 
 function toggle_user(user_id) {
+    noSleep.enable();
     users[get_user(user_id)].active = !users[get_user(user_id)].active;
     calculate_share();
     display_users();
