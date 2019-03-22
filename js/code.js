@@ -34,6 +34,11 @@ var gps_runing = false;
 var total_money = 0;
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
+var error_sound = new Audio();
+error_sound.src = "sounds/error.mp3";
+
+var recording = false;
+var recorder;
 
 var settings = {
     milage_cost: 1.3,
@@ -50,6 +55,39 @@ display_users();
 window.onload = () => {
     set_last_pos();
     run_gps();
+}
+
+function record() {
+    recording = !recording; // Toggle;
+    var recording_button = document.getElementsByClassName("record-button")[0];
+        recording_button.innerText = recording ? "START RECORDING" : "STOP RECORDING";
+    if (recording) { // Start recording
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+        }).then(async function (stream) {
+            recorder = RecordRTC(stream, {
+                type: 'video',
+                frameRate: 60,
+                mimeType: 'video/wav',
+            });
+            recorder.startRecording();
+
+        }).catch(err => {
+            alert(err);
+        })
+    } else {
+        recorder.stopRecording(function () {
+            if (confirm("Do you wish to save the dashcam footage?")) {
+                let blob = recorder.getBlob();
+
+                var date = new Date().constructor().split(" ")
+                date.splice(5, Infinity);
+                invokeSaveAsDialog(blob, "dashcam_fairfare_" + date);
+                recorder.destroy();
+            }
+        });
+    }
 }
 
 function set_last_pos() {
@@ -164,6 +202,7 @@ function run_gps() {
 
 function error(e) {
     console.log(e);
+    error_sound.play();
     alert("GPS Error!");
     set_gps_status(0);
     gps_runing = false;
@@ -272,12 +311,18 @@ function create_settings_DOM(animate) {
     receipt_button.setAttribute("onclick", "get_receipt()")
     receipt_button.innerText = "GET RECEIPT";
 
+    var record_button = document.createElement("button");
+    record_button.classList.add("btn");
+    record_button.classList.add("record-button");
+    record_button.setAttribute("onclick", "record()");
+    record_button.innerText = "ENABLE DASHCAM";
 
     settings_DOM.appendChild(milage_input);
-    settings_DOM.appendChild(switch_btn);
+    //settings_DOM.appendChild(switch_btn);
+    settings_DOM.appendChild(record_button);
     settings_DOM.appendChild(receipt_button);
     settings_DOM.appendChild(reset_button);
-    settings_DOM.innerHTML += "Delete users";
+    settings_DOM.innerHTML += "Users";
 
     for (i = 0; i < users.length; i++) {
         var user = document.createElement("div");
