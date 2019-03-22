@@ -14,7 +14,7 @@
 
 .header{
     width: 100%;
-    position: relative;
+    position: fixed;
     z-index: 1000;
     height: 60px;
     background: rgb(17, 17, 17);
@@ -32,7 +32,7 @@ body{
 
 .btn{
     height: 40px;
-    min-width: 70px;
+    /* min-width: 70px; */
     border-width: 2px;
     border-style: solid;
     border-radius: 5px;
@@ -67,8 +67,10 @@ body{
 
 .users{
     width: 90%;
-    margin: 0 auto;
-    position: relative;
+    left: 5%;
+    top: 60px;
+    height: 89vh;
+    position: fixed;
     overflow: auto;
 }
 
@@ -174,6 +176,7 @@ body{
     margin-bottom: 10px;
 }
 
+
 .record-button{
     width: 90%;
     margin: 0 auto;
@@ -183,6 +186,7 @@ body{
     color: rgb(201, 201, 201);
     margin-bottom: 10px;
 }
+
 
 .delete{ /* Button */
     float: right;
@@ -247,4 +251,14 @@ body{
     top: 60px;
     width: 100%;
     z-index: 100;
+}
+
+.credit-button{
+    width: 50px !important;
+    border-color: rgb(92, 224, 92);
+    color: rgb(92, 224, 92);
+    float: right;
+    top: 10px;
+    position: relative;
+    margin-right: 10px;
 }
