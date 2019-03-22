@@ -76,7 +76,6 @@ function record() {
             recorder = RecordRTC(stream, {
                 type: 'video',
                 frameRate: 60,
-                mimeType: 'video/wav',
             });
             recorder.startRecording();
             recording_button.innerText = recorder.getState() != "recording" ? "START RECORDING" : "STOP RECORDING";
