@@ -67,7 +67,7 @@ window.onload = () => {
 function record() {
     recording = !recording; // Toggle;
     var recording_button = document.getElementsByClassName("record-button")[0];
-        recording_button.innerText = recording ? "START RECORDING" : "STOP RECORDING";
+
     if (recording) { // Start recording
         navigator.mediaDevices.getUserMedia({
             video: true,
@@ -79,7 +79,7 @@ function record() {
                 mimeType: 'video/wav',
             });
             recorder.startRecording();
-
+            recording_button.innerText = recorder.getState() != "recording" ? "START RECORDING" : "STOP RECORDING";
         }).catch(err => {
             alert(err);
         })
@@ -90,11 +90,24 @@ function record() {
 
                 var date = new Date().constructor().split(" ")
                 date.splice(5, Infinity);
-                invokeSaveAsDialog(blob, "dashcam_fairfare_" + date);
-                recorder.destroy();
+                //invokeSaveAsDialog(blob, "dashcam_fairfare_" + date);
+
+                // Test
+                var reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = function () {
+                    base64data = reader.result;
+                    var video = document.createElement("video");
+                    video.setAttribute("src", base64data);
+                    video.controls = true;
+                    document.body.innerHTML = video.outerHTML;
+                }
+
+                //recorder.destroy();
             }
         });
     }
+    recording_button.innerText = recorder.getState() != "recording" ? "START RECORDING" : "STOP RECORDING";
 }
 
 function set_last_pos() {
