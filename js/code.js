@@ -3,6 +3,23 @@
 } */
 
 var noSleep = new NoSleep();
+var active_trip = localStorage.getItem("activeTrip") ? JSON.parse(localStorage.getItem("activeTrip")) : {
+    positions: [ /* Position */ ],
+    start: /* Date */ 0
+}
+
+class Position {
+    constructor(latitude, longitude, start_point = false) {
+        this.start_point = start_point;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.date = Date.now();
+        this.riders = [];
+        for (user of users) {
+            if (user.active) this.riders.push(user.username);
+        }
+    }
+}
 
 class User {
     constructor(username) {
@@ -33,6 +50,7 @@ class User {
     }
 }
 
+var past_trips = localStorage.getItem("trips") ? JSON.parse(localStorage.getItem("trips")) : new Array();
 var showing_settings = false;
 var loading_users = false;
 var users = [];
@@ -47,22 +65,25 @@ error_sound.src = "sounds/error.mp3";
 var recording = false;
 var recorder;
 
-var settings = {
+var settings_boiler = {
     milage_cost: 1.3,
     total_distance: 0, // Meters
-    last_pos: undefined /* Coords */ ,
+    last_pos: {} /* Coords */ ,
     display_share: false,
     total_rides: 0
 }
 
+var settings = settings_boiler;
+
 load();
-calculate_share();
-display_users();
 
 window.onload = () => {
-    set_last_pos();
+    calculate_share();
+    display_users();
     run_gps();
+    if (settings.last_pos.longitude == undefined) set_last_pos();
 }
+
 
 function record() {
     recording = !recording; // Toggle;
@@ -111,7 +132,9 @@ function record() {
 
 function set_last_pos() {
     navigator.geolocation.getCurrentPosition(position => {
-        settings.last_pos = position.coords;
+        settings.last_pos.longitude = position.coords.longitude;
+        settings.last_pos.latitude = position.coords.latitude;
+        save();
         set_gps_status(2); // Good!
     }, e => error(e));
 }
@@ -235,9 +258,9 @@ function run_gps() {
         if (settings.last_pos === undefined) return;
         var distance = calculateDistance(settings.last_pos.latitude, settings.last_pos.longitude, position.coords.latitude, position.coords.longitude);
 
-
         calculate_share();
-        settings.last_pos = position.coords;
+        settings.last_pos.longitude = position.coords.longitude;
+        settings.last_pos.latitude = position.coords.latitude;
 
         if (active_users > 0) {
             settings.total_distance += distance * 1000; // Meters
@@ -248,6 +271,7 @@ function run_gps() {
                 }
             }
         }
+        if(!all_users_inactive()) active_trip.positions.push(new Position(position.coords.latitude, position.coords.longitude))
         save();
 
         calculate_share();
@@ -328,8 +352,16 @@ function reset_all() {
         }
         settings.total_rides++;
         settings.total_distance = 0;
-        settings.last_pos = undefined;
         set_last_pos();
+        past_trips.push({
+            trip: active_trip,
+            total_distance: settings.total_distance,
+            total_cost: settings.total_money,
+            date: Date.now()
+        })
+        localStorage.setItem("trips", JSON.stringify(past_trips))
+        active_trip.positions = [];
+        active_trip.start = 0;
         save();
     }
 
@@ -444,11 +476,26 @@ function display_users() {
     }
 }
 
+function all_users_inactive() {
+    for (user of users)
+        if (user.active) return false;
+    return true;
+}
+
 function toggle_user(user_id) {
+    var new_trip = false;
+    if (all_users_inactive()) {
+        set_last_pos();
+        new_trip = true;
+    }
     noSleep.enable();
     users[get_user(user_id)].active = !users[get_user(user_id)].active;
     calculate_share();
     display_users();
+    if (new_trip) {
+        active_trip.positions.push(new Position(settings.last_pos.latitude, settings.last_pos.longitude, true));
+        if (active_trip.start == 0) active_trip.start = Date.now();
+    }
     save();
 }
 
@@ -478,7 +525,7 @@ function save() {
     if (showing_settings) {
         settings.milage_cost = Number(document.getElementById("milage_input").value);
     }
-
+    localStorage.setItem("activeTrip", JSON.stringify(active_trip));
     localStorage.setItem("users", JSON.stringify(users));
     localStorage.setItem("settings", JSON.stringify(settings));
 }
