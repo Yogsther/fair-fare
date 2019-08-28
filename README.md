@@ -12,7 +12,7 @@ will share the cost. Set a flat rate for how much each mile should cost and reci
 
 ### Connect to spotify
 The driver can connect to their premium spotify account. 
-That allows passengers to search spotify library and play and queue songs from their own phones.
+That allows passengers to search spotify's library, play and queue songs from their own phones.
 
 ### Broadcast your trip
 If you choose to broadcast your trip, you get a link / code that you can send to your friends.
